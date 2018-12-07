@@ -1,0 +1,19 @@
+#high_level { font-weight: bold; white-space: pre-wrap; }
+code { font-weight: bold; white-space: pre-wrap; color: #000000; background-color: #ffffff; line-height: 0 }
+
+.codebox {
+  padding: 15px;
+  font-family: Courier, sans-serif;
+  font-size: 13px;
+  color: #fff;
+  background-color: #3d3d3d;
+  -webkit-border-radius: 0px 0px 6px 6px;
+  -moz-border-radius: 0px 0px 6px 6px;
+  border-radius: 0px 0px 6px 6px;
+  margin-bottom: 10px;
+}
+    .codebox code {
+        /* Styles in here affect the text of the codebox */
+        font-size:0.9em;
+        /* You could also put all sorts of styling here, like different font, color, underline, etc. for the code. */
+    }
