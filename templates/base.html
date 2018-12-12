@@ -1,10 +1,13 @@
 <!doctype html>
-<title>Lopsy</title>
+<title>Floopy</title>
 <!--<link rel="stylesheet" href="https://unpkg.com/sakura.css@1.0.0/css/normalize.css"> -->
 <!--<link rel="stylesheet" href="https://unpkg.com/sakura.css@1.0.0/css/sakura-earthly.css"> -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css">
 <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='bootstrap.min.css') }}">
 <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='style.css') }}">
 
+<body>
     <nav class="navbar navbar-default" style="border-radius:0px">
         <div class="container">
             <!-- Brand and toggle get grouped for better mobile display -->
@@ -15,7 +18,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="">Reset</a>
+                <a class="navbar-brand" id="reset" href="">Reset</a>
             </div>
 
         </div><!-- /.container-fluid -->
@@ -24,24 +27,47 @@
 <div class="container">
     <div class="row">
         <form id="kernel">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="range-area">Domain</label>
+                <textarea name="range" class="form-control" id="range-area" rows="1">{ [i]: 0<=i<n }</textarea>
+              </div>
+              </div>
         <div class="col-md-5">
             <div class="form-group">
-                <label for="range-area">Range</label>
-                <textarea name="range" class="form-control" id="range-area" rows="3">{ [i]: 0<=i<n }</textarea>
+                <label for="kernel-area">Instructions</label>
+                <textarea name="kernel" class="form-control" id="kernel-area" rows="1">out[i] = 2*a[i]</textarea>
               </div>
-              </div>
-        <div class="col-md-5">
-            <div class="form-group">
-                <label for="kernl-area">Kernel</label>
-                <textarea name="kernel" class="form-control" id="kernel-area" rows="3">out[i] = 2*a[i]</textarea>
-              </div>
-              </div>
+             </div>
               <!-- <label>Range <textarea name="range" value="{ [i]: 0<=i<n }"></label> -->
               <!-- <label>Kernel <input name="kernel" value="out[i] = 2*a[i]"></label> -->
               <!-- <input type="submit" value="Submit"> -->
         <div class="col-md-2">
+            <div class="form-check">
+
+  <label class="form-check-label">
+    <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios1" value="opencl" checked>
+    OpenCL
+  </label>
+</div>
+<div class="form-check">
+  <label class="form-check-label">
+    <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios2" value="cuda">
+    CUDA
+  </label>
+</div>
+<div class="form-check disabled">
+  <label class="form-check-label">
+    <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios3" value="c">
+    C
+  </label>
+</div>
+
+
+             </div>
+        <div class="col-md-1">
               <button type="submit" class="btn btn-primary">Submit</button>
-        <span class="context-menu-one btn btn-neutral">right click me</span>
+             </div>
         </form>
     </div>
 
@@ -49,7 +75,7 @@
     <div class="row">
         <div class="col-md-6">
             <div class="panel panel-default">
-                <div class="panel-heading">Hover over htings</div>
+                <div class="panel-heading">Overview</div>
                 <div class="panel-body">
                 <span><span id="high_level"></span></span>
                 </div>
@@ -58,86 +84,285 @@
         </div>
         <div class="col-md-6">
             <div class="panel panel-default">
-                <div class="panel-heading">Hover over htings</div>
+                <div class="panel-heading">Output</div>
                 <div class="panel-body">
-            <span> <code><span id="code">#define lid(N) ((int) get_local_id(N))
-#define gid(N) ((int) get_group_id(N))
-
-__kernel void __attribute__ ((reqd_work_group_size(1, 1, 1))) loopy_kernel(__global float const *__restrict__ a, int const n, __global float *__restrict__ out)
-{
-    for (int i = 0; i <= -1 + n; ++i)
-    out[i] = 2.0f * a[i];
-}</span></code></span>
+            <span> <code><span id="code"></span></code></span>
                 </div>
         </div>
     </div>
 
 </div>
+</div>
+<footer class="footer">
+    <div class="container">
+        <div class="row" style="padding-top: 10px;" id="FooterRow">
+            <div class="col-sm-1">
+            </div>
+            <div class="hidden-lg hidden-md hidden-sm">&nbsp;</div>
+            <div id="drawing" class="col-sm-10 text-center">
+
+            </div>
+            <div class="hidden-lg hidden-md hidden-sm">&nbsp;</div>
+            <div class="col-sm-1">
+            </div>
+        </div>
+    </div>
+</footer>
+</body>
 
 
-  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+  <script src"https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.min.js"></script>
   <script>
     function addSubmit(ev) {
       ev.preventDefault();
         jQuery.each( $(this).serializeArray() , function( i, field ) {
             sessionStorage.setItem(field.name,field.value);
         });
+        //sessionStorage.setItem('transforms',JSON.stringify(["First",]));
+        let tforms = sessionStorage.getItem('transforms');
+        if (tforms) {
+            tforms = JSON.parse(tforms);
+        } else {
+            tforms = [];
+        }
+        sessionStorage.setItem('transforms', JSON.stringify(tforms));
+        let m_data = {};
+        m_data['kernel'] = $('#kernel-area').val();
+        m_data['range'] = $('#range-area').val();
+        m_data['transforms'] = tforms;
+        m_data['target'] = $("input[name='target-radios']:checked").val();
+        console.log(m_data);
+
       $.ajax({
         method: 'POST',
         url: {{ url_for('add')|tojson }},
-        data: $(this).serialize()
+        data: m_data
       }).done(addShow);
     }
 
-    function addTransform(m_data) {
-        m_data['kernel'] = sessionStorage.getItem('kernel');
-        m_data['range'] = sessionStorage.getItem('range');
-        m_data['transforms'] = sessionStorage.getItem('transforms');
-      $.ajax({
+    function sendData(m_data) {
+        $.ajax({
         method: 'POST',
         url: {{ url_for('add')|tojson }},
           data: m_data,
       }).done(addShow);
-        //$.post(url_for('transform')|tojson , {"data": JSON.stringify({blah: m_data},null, '\t')).done(addShow);
-        //method: 'POST',
-        //url: {{ url_for('transform')|tojson }},
-          //data: JSON.stringify(m_data,null, '\t')
-      //}).done(addShow);
     }
 
+    function addTransform(class_of,which,op,what_change) {
+        console.log("TRANSFORM CALLED");
+        let m_data = {};
+        m_data['kernel'] = sessionStorage.getItem('kernel');
+        m_data['range'] = sessionStorage.getItem('range');
+        m_data['transforms'] = JSON.parse(sessionStorage.getItem('transforms'));
+        m_data['transforms'].push([class_of ,which , op , what_change].join(':'));
+        console.log(m_data['transforms'])
+        sessionStorage.setItem('transforms', JSON.stringify(m_data['transforms']));
+        sendData(m_data);
+    }
+
+    function removeTransform(index) {
+        let m_data = {};
+        m_data['kernel'] = sessionStorage.getItem('kernel');
+        m_data['range'] = sessionStorage.getItem('range');
+        m_data['transforms'] = JSON.parse(sessionStorage.getItem('transforms'));
+        console.log("DELETING");
+        console.log(m_data['transforms']);
+        m_data['transforms'].splice(index,1);
+        console.log(m_data['transforms']);
+        sessionStorage.setItem('transforms', JSON.stringify(m_data['transforms']));
+
+        sendData(m_data);
+
+
+    }
+
+    function reset() {
+        sessionStorage.setItem('transforms', JSON.stringify([]));
+    }
+    $('#reset').on('click', reset);
+    
+
     function addShow(data) {
-      $('#high_level').text(data.high_level);
+
+        $.contextMenu( 'destroy' );
+        sessionStorage.setItem('transforms',JSON.stringify(data.transforms));
       $('#code').text(data.code);
+        console.log(data.high_level2);
+        $("#high_level").text("");
+        $("#high_level").append("<p>ARGUMENTS:</p>");
+
+        iname_checkboxes = {}
+        for (let iname of data.high_level2.p_tags) {
+            iname_checkboxes["prefetch:" + iname[0]] = {
+                            name: iname[0],
+                            type: 'checkbox', 
+                            selected: false
+                        }
+        }
+        iname_checkboxes["sep2"] = "---------"
+        iname_checkboxes["prefetch"] =  {name: "Add Prefetch (With Above Inames)", icon: "add"}
+
+        for (let arg of data.high_level2.p_arguments) {
+            $("#high_level").append("<div style='background-color: lightblue' id='arg_" + arg[0] + "'><p>" + arg[1] + "</p></div>");
+            $.contextMenu(arg_menu_dict(arg,iname_checkboxes));
+        }
+        $("#high_level").append("<hr/><p>DOMAINS:</p>");
+        for (let dom of data.high_level2.p_domains) {
+            $("#high_level").append("<p> " + dom + "</p>");
+        }
+        $("#high_level").append("<hr/><p>INAME IMPLEMENTATION TAGS:</p>");
+        for (let iname of data.high_level2.p_tags) {
+            t_str = ": "
+            if (iname[1].length == 0) {
+                t_str = t_str + "None  "
+            } else {
+                for (let m_tag of iname[1]) {
+                    t_str = t_str + m_tag + ", "
+                }
+            }
+            $("#high_level").append("<div style='background-color: lightgreen' id='iname_" + iname[0] + "'><p>" + iname[0] + t_str + "</p></div>");
+            $.contextMenu(iname_menu_dict(iname));
+        }
+        $("#high_level").append("<hr/><p>INSTRUCTIONS:</p>");
+        i = 0;
+        for (let inst of data.high_level2.p_instructions) {
+            $("#high_level").append("<div style='background-color: lightsalmon' id='inst_" + i + "'><p>" + inst + "</p>");
+            i += 1;
+        }
+
+
+
+        $('#drawing').empty();
+        draw = SVG('drawing').height(50);
+        i = 0;
+        for (transf of data.transforms) {
+            var rect = draw.circle(20);
+            rect.fill('#099909');
+            rect.x(i*40);
+            rect.y(20);
+            rect.mousedown(callbackClosure(i, function(i) {
+                console.log("happening");
+                console.log(i);
+                removeTransform(i);
+            }));
+            i += 1;
+        }
+    }
+
+    //https://www.pluralsight.com/guides/javascript-callbacks-variable-scope-problem
+    function callbackClosure(i, callback) {
+        return function() {
+            return callback(i);
+        }
+    }
+
+    function arg_menu_dict(arg, iname_checkboxes) {
+            return {
+                 selector: '#arg_' + arg[0], 
+            trigger: 'left',
+            delay: 500,
+            autoHide: false,
+            callback:  function(itemKey, options){ 
+                let arg_info = {};
+                let inames_to_sweep = []
+                $.contextMenu.getInputValues(options, arg_info);
+                for (const [key, value] of Object.entries(arg_info)) {
+                    if (value) {
+                        inames_to_sweep.push(key.split(':')[1])
+                    }
+                }
+                switch (itemKey) {
+                    default:
+                        let res = itemKey.split(':');
+                        addTransform('arg', arg[0], itemKey,inames_to_sweep.join(":"));
+                        break;
+                } 
+            },
+            items: {
+                "tag": {
+                    "name": "Prefetch", 
+                    "items": iname_checkboxes,
+                },
+                "sep1": "---------",
+                "quit": {name: "Quit", icon: 'context-menu-icon context-menu-icon-quit' }
+            },
+
+            }
+    }
+
+    function iname_menu_dict(iname) {
+            return {
+                 selector: '#iname_' + iname[0], 
+            trigger: 'left',
+            delay: 500,
+            autoHide: false,
+            callback:  function(itemKey, options){ 
+                let iname_info = {};
+                $.contextMenu.getInputValues(options, iname_info);
+                console.log(iname_info);
+                console.log(itemKey);
+                switch (itemKey) {
+                    case 'split':
+                        addTransform('iname', iname[0], itemKey,iname_info['size']);
+                        break;
+                    default:
+                        let res = itemKey.split(':');
+                        addTransform('iname', iname[0], res[0],res[1]);
+                        break;
+                } 
+            },
+            items: {
+                "size": {
+                name: "Inner Size", 
+                type: 'text', 
+                },
+                "split": {name: "Split Iname", icon: "add"},
+                "tag": {
+                    "name": "Tag Iname", 
+                    "items": {
+                        "tag:l.0": {"name": "l.0"},
+                        "tag:l.1": {"name": "l.1"},
+                        "tag:l.2": {"name": "l.2"},
+                        "tag:g.0": {"name": "g.0"},
+                        "tag:g.1": {"name": "g.1"},
+                        "tag:g.2": {"name": "g.2"},
+                        "tag:unr": {"name": "unr"}
+                    },
+                },
+                "sep1": "---------",
+                "quit": {name: "Quit", icon: "context-menu-icon context-menu-icon-quit" }
+            },
+
+            }
+
     }
 
     $('#kernel').on('submit', addSubmit);
 
 
-$(function() {
-        $.contextMenu({
-             selector: '.context-menu-one', 
-        trigger: 'hover',
-        delay: 500,
-        autoHide: true,
-        callback: function(key, options) {
-            addTransform({transform: "split"})
-        },
-        items: {
-            "edit": {name: "Edit", icon: "edit"},
-            "sep1": "---------",
-            "quit": {name: "Quit", icon: function($element, key, item){ return 'context-menu-icon context-menu-icon-quit'; }}
-        }
-        });
 
-        $('.context-menu-one').on('click', function(e){
-            console.log('clicked', this);
-        })    
-    });
 
-  </script>
+ </script> 
+        <script>
+        
+          $(document).ready(footerSize)
+          $(window).resize(footerSize)
+                  
+                  function footerSize(){
+        
+           var footerHeight = $('footer').height();
+           var rowHeight = $('#FooterRow').height();
+           var extraHeight = 15;
+        
+            $('footer').css('height', rowHeight+extraHeight);
+            $('body').css('margin-bottom', rowHeight+extraHeight);
+          };
+        </script>
 
 
