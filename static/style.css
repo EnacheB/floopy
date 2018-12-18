@@ -41,3 +41,7 @@ img {
     color: #FFF;
 
 }
+
+.panel-body  {
+    word-break:break-all
+}

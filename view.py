@@ -225,6 +225,10 @@ def knl_to_json(knl, what=None, with_dependencies=False, use_separators=True):
 
         return lines
 
+# Maker into python string
+def mps(thing):
+    return """ '""" + thing + """' """
+
 
 @app.route('/')
 def index():
@@ -239,20 +243,20 @@ def process_kernel_transforms():
     p_transforms = request.form.getlist('transforms[]')
     p_target = request.form.get('target', 'opencl', type=str)
 
-    liness = []
+    lines = []
     if p_target == 'c':
-        target = lp.CTarget()
+        target = "lp.CTarget()"
     elif p_target == 'cuda':
-        target = lp.CudaTarget()
+        target = "lp.CudaTarget()"
     else:
-        target = lp.OpenCLTarget()
+        target = "lp.OpenCLTarget()"
 
     knl = None
     try:
     #if True:
-        lines.append("""knl = lp.make_kernel(p_range,p_kernel,options=lp.Options(allow_terminal_colors=False), target=target)""")
+        lines.append("lp.make_kernel(p_range,p_kernel,options=lp.Options(allow_terminal_colors=False), target=" + target +")")
         print(knl)
-        types = {}
+        types = '{ '
         for transf in p_transforms:
             transf_array = transf.split(':')
             target, which, operation = transf_array[:3]
@@ -260,16 +264,17 @@ def process_kernel_transforms():
             if operation == 'type':
                 assert(len(options) == 1)
                 if options[0] == 'f32':
-                    typ = np.float32
+                    typ = 'np.float32'
                 elif options[0] == 'f64':
-                    typ = np.float64
+                    typ = 'np.float64'
                 elif options[0] == 'i32':
-                    typ = np.int32
+                    typ = 'np.int32'
                 else:
                     raise ValueError("Unknown type requested for argument " + which)
-                types[which] = typ
+                types  = types + mps(which) + ':' + typ + ','
 
-        knl = lp.add_and_infer_dtypes(knl, types)
+        types = types[:-1] + '}'
+        lines.append("lp.add_and_infer_dtypes(knl, " + types + ")")
 
         for transf in p_transforms:
             print(transf)
@@ -280,20 +285,34 @@ def process_kernel_transforms():
             if target == 'iname':
                 if operation == 'split':
                     assert(len(options) == 3)
-                    knl = lp.split_iname(knl, which, int(options[0]), slabs = (int(options[1]), int(options[2])))
+                    lines.append("lp.split_iname(knl," + mps(which) + " , " + options[0] + ", slabs = (" + options[1] + ", " + options[2] + "))")
                 if operation == 'tag':
                     assert(len(options) == 1)
-                    knl = lp.tag_inames(knl, [(which, options[0]),])
+                    lines.append("lp.tag_inames(knl, [( " + mps(which) + "," + mps(options[0]) + "),])")
+
+                if operation == 'prioritize':
+                    assert(len(options) == 1)
+                    lines.append("lp.prioritize_loops(knl," +  mps(options[0]) + ")")
             if target == 'arg':
                 if operation == 'prefetch':
                     if options == ['',]:
                         options = []
-                    knl = lp.add_prefetch(knl, which, options)
+                    lines.append("lp.add_prefetch(knl, " + mps(which) + "," + str(options) + ")")
+            if target == 'any':
+                    lines.append(operation)
 
-        #knl = lp.add_prefetch(knl,'a')
-        code = lp.generate_code_v2(knl).device_code()
+        print("got here")
+        print(lines)
+        for line in lines:
+            knl = eval(line)
+
+        if p_target == 'python':
+            code = '\n'.join(('knl = ' + l for l in lines))
+        else:
+            code = lp.generate_code_v2(knl).device_code()
     except Exception as inst:
     #if True:
+        print("EXception!!!!!!!")
         print(str(inst))
         return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=str(inst),transforms=p_transforms, err=True )
 
