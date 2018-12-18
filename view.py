@@ -22,6 +22,8 @@ def natsorted(seq, key=lambda x: x):
     return sorted(seq, key=lambda y: natorder(key(y)))
 
 def knl_to_json(knl, what=None, with_dependencies=False, use_separators=True):
+        if knl == None:
+            return None
         all_what = set([
             "name",
             "arguments",
@@ -229,14 +231,15 @@ def index():
     return render_template('base.html')
 
 
-@app.route('/add', methods=['POST'])
-def add():
+@app.route('/process_kernel_transforms', methods=['POST'])
+def process_kernel_transforms():
     print(request.form)
     p_range = request.form.get('range', "", type=str)
     p_kernel = request.form.get('kernel', "", type=str)
     p_transforms = request.form.getlist('transforms[]')
     p_target = request.form.get('target', 'opencl', type=str)
 
+    liness = []
     if p_target == 'c':
         target = lp.CTarget()
     elif p_target == 'cuda':
@@ -244,11 +247,29 @@ def add():
     else:
         target = lp.OpenCLTarget()
 
+    knl = None
     try:
-        knl = lp.make_kernel(p_range,p_kernel,options=lp.Options(allow_terminal_colors=False), target=target)
-        knl = lp.add_and_infer_dtypes(knl, {
-            "a": np.float32,
-            })
+    #if True:
+        lines.append("""knl = lp.make_kernel(p_range,p_kernel,options=lp.Options(allow_terminal_colors=False), target=target)""")
+        print(knl)
+        types = {}
+        for transf in p_transforms:
+            transf_array = transf.split(':')
+            target, which, operation = transf_array[:3]
+            options = transf_array[3:]
+            if operation == 'type':
+                assert(len(options) == 1)
+                if options[0] == 'f32':
+                    typ = np.float32
+                elif options[0] == 'f64':
+                    typ = np.float64
+                elif options[0] == 'i32':
+                    typ = np.int32
+                else:
+                    raise ValueError("Unknown type requested for argument " + which)
+                types[which] = typ
+
+        knl = lp.add_and_infer_dtypes(knl, types)
 
         for transf in p_transforms:
             print(transf)
@@ -258,8 +279,8 @@ def add():
             print(options)
             if target == 'iname':
                 if operation == 'split':
-                    assert(len(options) == 1)
-                    knl = lp.split_iname(knl, which, int(options[0]))
+                    assert(len(options) == 3)
+                    knl = lp.split_iname(knl, which, int(options[0]), slabs = (int(options[1]), int(options[2])))
                 if operation == 'tag':
                     assert(len(options) == 1)
                     knl = lp.tag_inames(knl, [(which, options[0]),])
@@ -271,10 +292,12 @@ def add():
 
         #knl = lp.add_prefetch(knl,'a')
         code = lp.generate_code_v2(knl).device_code()
-    except lp.diagnostic.LoopyError as inst:
-        return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=str(inst),transforms=p_transforms, err=str(inst) )
+    except Exception as inst:
+    #if True:
+        print(str(inst))
+        return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=str(inst),transforms=p_transforms, err=True )
 
-    return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=code,transforms=p_transforms )
+    return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=code,transforms=p_transforms, err=False)
 
 # TODO remove this
 @app.after_request

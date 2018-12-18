@@ -30,38 +30,44 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label for="range-area">Domain</label>
-                <textarea name="range" class="form-control" id="range-area" rows="1">{ [i]: 0<=i<n }</textarea>
+                <textarea name="range" class="form-control" id="range-area" rows="1">{ [i,j,k,l]: 0<=i,j<n  and 0<=k,l<m}</textarea>
               </div>
               </div>
         <div class="col-md-5">
             <div class="form-group">
                 <label for="kernel-area">Instructions</label>
-                <textarea name="kernel" class="form-control" id="kernel-area" rows="1">out[i] = 2*a[i]</textarea>
+                <textarea name="kernel" class="form-control" id="kernel-area" rows="1">out[i,j] = sum(k,sum(l,a[i+k,j+l]*x[k,l]))</textarea>
               </div>
              </div>
               <!-- <label>Range <textarea name="range" value="{ [i]: 0<=i<n }"></label> -->
               <!-- <label>Kernel <input name="kernel" value="out[i] = 2*a[i]"></label> -->
               <!-- <input type="submit" value="Submit"> -->
         <div class="col-md-2">
-            <div class="form-check">
 
-  <label class="form-check-label">
-    <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios1" value="opencl" checked>
-    OpenCL
-  </label>
-</div>
-<div class="form-check">
-  <label class="form-check-label">
-    <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios2" value="cuda">
-    CUDA
-  </label>
-</div>
-<div class="form-check disabled">
-  <label class="form-check-label">
-    <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios3" value="c">
-    C
-  </label>
-</div>
+            <div class="form-check">
+              <label class="form-check-label">
+                <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios1" value="opencl" checked>
+                OpenCL
+              </label>
+            </div>
+            <div class="form-check">
+              <label class="form-check-label">
+                <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios2" value="cuda">
+                CUDA
+              </label>
+            </div>
+            <div class="form-check">
+              <label class="form-check-label">
+                <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios3" value="c">
+                C
+              </label>
+            </div>
+            <div class="form-check">
+              <label class="form-check-label">
+                <input class="form-check-input" type="radio" name="target-radios" id="exampleRadios4" value="python">
+                Python Source
+              </label>
+            </div>
 
 
              </div>
@@ -139,17 +145,13 @@
         m_data['target'] = $("input[name='target-radios']:checked").val();
         console.log(m_data);
 
-      $.ajax({
-        method: 'POST',
-        url: {{ url_for('add')|tojson }},
-        data: m_data
-      }).done(addShow);
+        sendData(m_data);
     }
 
     function sendData(m_data) {
         $.ajax({
         method: 'POST',
-        url: {{ url_for('add')|tojson }},
+        url: {{ url_for('process_kernel_transforms')|tojson }},
           data: m_data,
       }).done(addShow);
     }
@@ -193,7 +195,9 @@
         $.contextMenu( 'destroy' );
         sessionStorage.setItem('transforms',JSON.stringify(data.transforms));
       $('#code').text(data.code);
-        console.log(data.high_level2);
+        if (data.err) {
+
+        }
         $("#high_level").text("");
         $("#high_level").append("<p>ARGUMENTS:</p>");
 
@@ -253,6 +257,7 @@
             }));
             i += 1;
         }
+        footerSize();
     }
 
     //https://www.pluralsight.com/guides/javascript-callbacks-variable-scope-problem
@@ -263,8 +268,8 @@
     }
 
     function arg_menu_dict(arg, iname_checkboxes) {
-            return {
-                 selector: '#arg_' + arg[0], 
+        return {
+            selector: '#arg_' + arg[0], 
             trigger: 'left',
             delay: 500,
             autoHide: false,
@@ -277,10 +282,14 @@
                         inames_to_sweep.push(key.split(':')[1])
                     }
                 }
-                switch (itemKey) {
-                    default:
-                        let res = itemKey.split(':');
-                        addTransform('arg', arg[0], itemKey,inames_to_sweep.join(":"));
+                let res = itemKey.split(':');
+                console.log(res);
+                switch (res[0]) {
+                    case "type":
+                        addTransform('arg', arg[0], res[0],res[1]);
+                        break;
+                    case "prefetch":
+                        addTransform('arg', arg[0], res[0],inames_to_sweep.join(":"));
                         break;
                 } 
             },
@@ -289,12 +298,21 @@
                     "name": "Prefetch", 
                     "items": iname_checkboxes,
                 },
+                "type": {
+                    "name": "Type",
+                    "items": {
+                        "type:f32": {"name": "f32"},
+                        "type:f64": {"name": "f64"},
+                    },
+
+                },
                 "sep1": "---------",
-                "quit": {name: "Quit", icon: 'context-menu-icon context-menu-icon-quit' }
+                "quit": {name: "Quit", icon: "context-menu-icon context-menu-icon-quit" }
             },
 
             }
     }
+
 
     function iname_menu_dict(iname) {
             return {
@@ -305,11 +323,9 @@
             callback:  function(itemKey, options){ 
                 let iname_info = {};
                 $.contextMenu.getInputValues(options, iname_info);
-                console.log(iname_info);
-                console.log(itemKey);
                 switch (itemKey) {
                     case 'split':
-                        addTransform('iname', iname[0], itemKey,iname_info['size']);
+                        addTransform('iname', iname[0], itemKey,[iname_info['size'],iname_info['pre_slab'], iname_info['post_slab']].join(':'));
                         break;
                     default:
                         let res = itemKey.split(':');
@@ -318,21 +334,36 @@
                 } 
             },
             items: {
-                "size": {
-                name: "Inner Size", 
-                type: 'text', 
+                "split-menu": {
+                    "name": "Split Iname", 
+                    "items": {
+                        "pre_slab": {
+                        name: "Head Slab Iteration Count", 
+                        type: 'text', 
+                        value: '0'
+                        },
+                        "post_slab": {
+                        name: "Tail Slab Iteration Count", 
+                        type: 'text', 
+                        value: '0'
+                        },
+                        "size": {
+                        name: "Inner Size", 
+                        type: 'text', 
+                        },
+                        "split": {name: "Split Iname", icon: "add"},
+                    },
                 },
-                "split": {name: "Split Iname", icon: "add"},
                 "tag": {
                     "name": "Tag Iname", 
                     "items": {
-                        "tag:l.0": {"name": "l.0"},
-                        "tag:l.1": {"name": "l.1"},
-                        "tag:l.2": {"name": "l.2"},
-                        "tag:g.0": {"name": "g.0"},
-                        "tag:g.1": {"name": "g.1"},
-                        "tag:g.2": {"name": "g.2"},
-                        "tag:unr": {"name": "unr"}
+                        "tag:l.0": {"name": "Local Dimension 0"},
+                        "tag:l.1": {"name": "Local Dimension 1"},
+                        "tag:l.2": {"name": "Local Dimension 2"},
+                        "tag:g.0": {"name": "Global Dimension 0"},
+                        "tag:g.1": {"name": "Global Dimension 1"},
+                        "tag:g.2": {"name": "Global Dimension 2"},
+                        "tag:unr": {"name": "Unroll"}
                     },
                 },
                 "sep1": "---------",
@@ -354,7 +385,7 @@
           $(document).ready(footerSize)
           $(window).resize(footerSize)
                   
-                  function footerSize(){
+            function footerSize(){
         
            var footerHeight = $('footer').height();
            var rowHeight = $('#FooterRow').height();
