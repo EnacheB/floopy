@@ -1,15 +1,13 @@
 from flask import jsonify, render_template, request,session
 
-from lopsy import app
+from floopy import app
 
 import loopy as lp
 import numpy as np
 import collections
 import six
 
-import sys
-print(sys.path)
-from loopy_bits import knl_to_json
+from floopy.loopy_bits import knl_to_json
 
 
 # Maker into python string
@@ -24,7 +22,6 @@ def index():
 
 @app.route('/process_kernel_transforms', methods=['POST'])
 def process_kernel_transforms():
-    print(request.form)
     p_range = request.form.get('range', "", type=str)
     p_kernel = request.form.get('kernel', "", type=str)
     p_transforms = request.form.getlist('transforms[]')
@@ -40,9 +37,7 @@ def process_kernel_transforms():
 
     knl = None
     try:
-    #if True:
         lines.append("lp.make_kernel(p_range,p_kernel,options=lp.Options(allow_terminal_colors=False), target=" + target +")")
-        print(knl)
         types = '{ '
         for transf in p_transforms:
             transf_array = transf.split(':')
@@ -64,11 +59,9 @@ def process_kernel_transforms():
         lines.append("lp.add_and_infer_dtypes(knl, " + types + ")")
 
         for transf in p_transforms:
-            print(transf)
             transf_array = transf.split(':')
             target, which, operation = transf_array[:3]
             options = transf_array[3:]
-            print(options)
             if target == 'iname':
                 if operation == 'split':
                     assert(len(options) == 3)
