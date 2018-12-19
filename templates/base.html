@@ -25,7 +25,25 @@
     </nav>
 
 <div class="container">
+
+         <div class="panel-group">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a data-toggle="collapse" href="#collapse1">More Options</a>
+      </h4>
+    </div>
+    <div id="collapse1" class="panel-collapse collapse">
+      <div class="panel-body">
+      
+      
     <div class="row">
+      
+
+
+
+
+
         <form id="kernel">
         <div class="col-md-4">
             <div class="form-group">
@@ -80,7 +98,7 @@
     <div class="row">
         <form id="arb_trans">
             <div class="col-md-11">
-                <div class="form-group row">
+                <div class="form-group">
                     <label for="transf-area">Arbitrary Transformation</label>
                     <div class="input-group mb-2 mr-sm-2 mb-sm-0">
                         <div class="input-group-addon">knl = </div>
@@ -96,6 +114,11 @@
             </div>
         </form>
     </div>
+
+      </div>
+    </div>
+  </div>
+</div> 
 
 
     <div class="row">
@@ -230,7 +253,7 @@
                         }
         }
         iname_checkboxes["sep2"] = "---------"
-        iname_checkboxes["prefetch"] =  {name: "Add Prefetch (With Above Inames)", icon: "add"}
+        iname_checkboxes["prefetch"] =  {name: "Do Operation (With Above Inames)", icon: "add"}
 
         for (let arg of data.high_level2.p_arguments) {
             $("#high_level").append("<div style='background-color: lightblue' id='arg_" + arg[0] + "'><p>" + arg[1] + "</p></div>");
@@ -256,9 +279,21 @@
         $("#high_level").append("<hr/><p>INSTRUCTIONS:</p>");
         i = 0;
         for (let inst of data.high_level2.p_instructions) {
-            $("#high_level").append("<div style='background-color: lightsalmon' id='inst_" + i + "'><p>" + inst + "</p>");
+            $("#high_level").append("<div id='inst_" + i + "'><p>" + inst + "</p>");
             i += 1;
         }
+
+        if (data.high_level2.p_rules) {
+        $("#high_level").append("<hr/><p>SUBSTITUTION RULES:</p>");
+        i = 0;
+        for (let rule of data.high_level2.p_rules) {
+            console.log(rule)
+            $("#high_level").append("<div style='background-color: lightsalmon' id='rule_" + rule[0] + "'><p>" + rule[1] + "</p>");
+            $.contextMenu(rule_menu_dict(rule,iname_checkboxes));
+            i += 1;
+        }
+        }
+
 
 
 
@@ -271,12 +306,14 @@
 
             var rect = draw.circle(20);
             console.log(split_transf);
-            if (split_transf[0] == "any" ) {
-                rect.fill('#990909');
+            if (split_transf[0] == "iname" ) {
+                rect.fill('#90EE90');
             } else if (split_transf[0] == "arg") {
-                rect.fill('#090999');
+                rect.fill('#ADD8E6');
+            } else if (split_transf[0] == "rule") {
+                rect.fill('#FFA07A');
             } else {
-                rect.fill('#099909');
+                rect.fill('#990909');
             }
             rect.x(i*40);
             rect.y(20);
@@ -318,6 +355,12 @@
                     case "prefetch":
                         addTransform('arg', arg[0], res[0],inames_to_sweep.join(":"));
                         break;
+                    case "subst":
+                        addTransform('arg', arg[0], res[0],[arg_info['name'],arg_info['subscript'], arg_info['params'] ].join(":"));
+                        break;
+                    case "split":
+                        addTransform('arg', arg[0], res[0],[arg_info['axis_nr'],arg_info['count'] ].join(":"));
+                        break;
                 } 
             },
             items: {
@@ -325,11 +368,44 @@
                     "name": "Prefetch", 
                     "items": iname_checkboxes,
                 },
+                "subst": {
+                    "name": "Create Subst Rule", 
+                    "items": {
+                        "name": {
+                        name: "Rule Name", 
+                        type: 'text', 
+                        },
+                        "subscript": {
+                        name: "Subscript", 
+                        type: 'text', 
+                        },
+                        "params": {
+                        name: "Parameters", 
+                        type: 'text', 
+                        },
+                        "subst": {name: "Create Rule", icon: "add"},
+                    },
+                },
+                "split": {
+                    "name": "Split Array Axis", 
+                    "items": {
+                        "axis_nr": {
+                        name: "Axis Number", 
+                        type: 'text', 
+                        },
+                        "count": {
+                        name: "Count", 
+                        type: 'text', 
+                        },
+                        "split": {name: "Split Array Axis", icon: "add"},
+                    },
+                },
                 "type": {
                     "name": "Type",
                     "items": {
                         "type:f32": {"name": "f32"},
                         "type:f64": {"name": "f64"},
+                        "type:i32": {"name": "i32"},
                     },
 
                 },
@@ -413,6 +489,41 @@
             }
 
     }
+
+    function rule_menu_dict(rule, iname_checkboxes) {
+        return {
+            selector: '#rule_' + rule[0], 
+            trigger: 'left',
+            delay: 500,
+            autoHide: false,
+            callback:  function(itemKey, options){ 
+                let arg_info = {};
+                let inames_to_sweep = []
+                $.contextMenu.getInputValues(options, arg_info);
+                for (const [key, value] of Object.entries(arg_info)) {
+                    if (value) {
+                        inames_to_sweep.push(key.split(':')[1])
+                    }
+                }
+                let res = itemKey.split(':');
+                switch (res[0]) {
+                    case "prefetch":
+                        addTransform('rule', rule[0], 'precompute',inames_to_sweep.join(":"));
+                        break;
+                } 
+            },
+            items: {
+                "tag": {
+                    "name": "Precompute", 
+                    "items": iname_checkboxes,
+                },
+                "sep1": "---------",
+                "quit": {name: "Quit", icon: "context-menu-icon context-menu-icon-quit" }
+            },
+
+            }
+    }
+
 
     $('#kernel').on('submit', addSubmit);
     $('#arb_trans').on('submit', addArbitraryTransf);
