@@ -90,8 +90,11 @@ def knl_to_json(knl, what=None, with_dependencies=False, use_separators=True):
         if "arguments" in what:
             lines['p_arguments'] = []
             for arg_name in natsorted(kernel.arg_dict):
-                print(kernel.arg_dict)
-                lines['p_arguments'].append([arg_name, str(kernel.arg_dict[arg_name])])
+                if isinstance(kernel.arg_dict[arg_name],lp.GlobalArg):
+                    typ = "global"
+                if isinstance(kernel.arg_dict[arg_name],lp.ValueArg):
+                    typ = "value"
+                lines['p_arguments'].append([arg_name, str(kernel.arg_dict[arg_name]), typ])
 
         if "domains" in what:
             lines['p_domains'] = []
@@ -144,7 +147,6 @@ def knl_to_json(knl, what=None, with_dependencies=False, use_separators=True):
 
             # }}}
 
-            import loopy as lp
 
             Fore = kernel.options._fore  # noqa
             Style = kernel.options._style  # noqa

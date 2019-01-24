@@ -4,10 +4,12 @@ from floopy import app
 
 import loopy as lp
 import numpy as np
+import pyopencl as cl
 import collections
 import six
 
 from floopy.loopy_bits import knl_to_json
+from floopy.perflex_bits import time_knl
 
 
 # Maker into python string
@@ -22,10 +24,14 @@ def index():
 
 @app.route('/process_kernel_transforms', methods=['POST'])
 def process_kernel_transforms():
+    print("StARTING")
     p_range = request.form.get('range', "", type=str)
     p_kernel = request.form.get('kernel', "", type=str)
     p_transforms = request.form.getlist('transforms[]')
     p_target = request.form.get('target', 'opencl', type=str)
+    performance_measure = False
+    timing = 0.0
+    value_dict = {}
 
     lines = []
     if p_target == 'c':
@@ -86,15 +92,22 @@ def process_kernel_transforms():
                     if options == ['',]:
                         options = []
                     lines.append("lp.split_array_axis(knl, " + mps(which) + "," + options[0] + ", " +  options[1] + ")")
+                if operation == 'perf':
+                    if options == ['',]:
+                        options = []
+                    performance_measure = True
+                    value_dict[which] = int(options[0])
 
             if target == 'rule':
                 if operation == 'precompute':
                     if options == ['',]:
                         options = []
+                    performance_measure = True
                     lines.append("lp.precompute(knl, " + mps(which) + "," + str(options) + ")")
 
             if target == 'any':
                     lines.append(operation)
+
 
         for line in lines:
             knl = eval(line)
@@ -103,10 +116,17 @@ def process_kernel_transforms():
             code = '\n'.join(('knl = ' + l for l in lines))
         else:
             code = lp.generate_code_v2(knl).device_code()
-    except Exception as inst:
-        return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=str(inst),transforms=p_transforms, err=True )
 
-    return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=code,transforms=p_transforms, err=False)
+        if performance_measure:
+            ctx = cl.create_some_context(interactive=False)
+            print(value_dict)
+            timing = time_knl(knl,ctx,value_dict)
+        print("RETURNING")
+    except Exception as inst:
+        #raise inst
+        return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=str(inst),transforms=p_transforms, err=True, timing = timing )
+
+    return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=code,transforms=p_transforms, err=False, timing = timing)
 
 # TODO remove this
 @app.after_request

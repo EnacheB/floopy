@@ -257,7 +257,7 @@
 
         for (let arg of data.high_level2.p_arguments) {
             $("#high_level").append("<div style='background-color: lightblue' id='arg_" + arg[0] + "'><p>" + arg[1] + "</p></div>");
-            $.contextMenu(arg_menu_dict(arg,iname_checkboxes));
+            $.contextMenu(arg_menu_dict(arg,iname_checkboxes, arg[2]));
         }
         $("#high_level").append("<hr/><p>DOMAINS:</p>");
         for (let dom of data.high_level2.p_domains) {
@@ -332,7 +332,23 @@
         }
     }
 
-    function arg_menu_dict(arg, iname_checkboxes) {
+    function arg_menu_dict(arg, iname_checkboxes, typ) {
+        perf_dict = {}
+        if (typ == "value") {
+            perf_dict = {
+                    "name": "Enable Performance Measurements", 
+                    "items": {
+                        "size": {
+                        name: "Size", 
+                        type: 'text', 
+                        },
+                        "perf": {name: "Set Size", icon: "add"},
+                    },
+                }
+
+        }
+
+
         return {
             selector: '#arg_' + arg[0], 
             trigger: 'left',
@@ -360,6 +376,9 @@
                         break;
                     case "split":
                         addTransform('arg', arg[0], res[0],[arg_info['axis_nr'],arg_info['count'] ].join(":"));
+                        break;
+                    case "perf":
+                        addTransform('arg', arg[0], res[0],[arg_info['size'] ].join(":"));
                         break;
                 } 
             },
@@ -400,6 +419,7 @@
                         "split": {name: "Split Array Axis", icon: "add"},
                     },
                 },
+                "perf": perf_dict,
                 "type": {
                     "name": "Type",
                     "items": {
