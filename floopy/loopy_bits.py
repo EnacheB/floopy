@@ -150,10 +150,13 @@ def knl_to_json(knl, what=None, with_dependencies=False, use_separators=True):
             Style = kernel.options._style  # noqa
 
             from loopy.kernel.tools import draw_dependencies_as_unicode_arrows
+            deps = draw_dependencies_as_unicode_arrows(
+                        printed_insn_order, fore=Fore, style=Style)
+            if not isinstance(deps, list):
+                deps = [deps]
+
             for insn, (arrows, extender) in zip(
-                    printed_insn_order,
-                    draw_dependencies_as_unicode_arrows(
-                        printed_insn_order, fore=Fore, style=Style)):
+                    printed_insn_order, deps):
 
                 if isinstance(insn, lp.MultiAssignmentBase):
                     lhs = ", ".join(str(a) for a in insn.assignees)
