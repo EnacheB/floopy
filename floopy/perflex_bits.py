@@ -2,6 +2,7 @@
 import pyopencl as cl
 import loopy as lp
 import time
+import numpy as np
 
 def time_knl(knl, ctx, param_dict):
     def create_rand_args(ctx, knl, param_dict):
@@ -23,13 +24,11 @@ def time_knl(knl, ctx, param_dict):
     trial_wtimes = []
     arg_arrays = create_rand_args(ctx, knl, param_dict)
     knl = lp.set_options(knl, no_numpy=True)
-    compiled = lp.CompiledKernel(ctx, knl)
     for t in range(2 + 3):
         queue.finish()
         tstart = time.time()
-        evt, out = compiled(queue, **arg_arrays)
+        evt, out = knl(queue, **arg_arrays)
         queue.finish()
         tend = time.time()
         trial_wtimes.append(tend-tstart)
     return np.average(trial_wtimes[2:])
-

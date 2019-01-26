@@ -238,6 +238,7 @@
         $.contextMenu( 'destroy' );
         sessionStorage.setItem('transforms',JSON.stringify(data.transforms));
       $('#code').text(data.code);
+        $('#code').append("<p>Time To Execute: " + data.timing + "</p>");
         if (data.err) {
 
         }

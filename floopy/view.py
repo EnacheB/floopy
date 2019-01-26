@@ -39,7 +39,7 @@ def process_kernel_transforms():
     elif p_target == 'cuda':
         target = "lp.CudaTarget()"
     else:
-        target = "lp.OpenCLTarget()"
+        target = "lp.PyOpenCLTarget()"
 
     knl = None
     try:
@@ -119,9 +119,7 @@ def process_kernel_transforms():
 
         if performance_measure:
             ctx = cl.create_some_context(interactive=False)
-            print(value_dict)
             timing = time_knl(knl,ctx,value_dict)
-        print("RETURNING")
     except Exception as inst:
         #raise inst
         return jsonify(high_level2=knl_to_json(knl), high_level=str(knl),code=str(inst),transforms=p_transforms, err=True, timing = timing )
