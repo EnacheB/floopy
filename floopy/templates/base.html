@@ -25,7 +25,7 @@
     </nav>
 
 <div class="container">
-
+ <!--panel stuff is bootstrap-->
          <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
@@ -142,6 +142,7 @@
 
 </div>
 </div>
+<!-- current location of the dots -->
 <footer class="footer">
     <div class="container">
         <div class="row" style="padding-top: 10px;" id="FooterRow">
@@ -299,13 +300,13 @@
 
 
         $('#drawing').empty();
-        draw = SVG('drawing').height(50);
+        draw = SVG('drawing').height(50); //<!--svg.js library to draw things-->
         i = 0;
-
+ 
         for (transf of data.transforms) {
             let split_transf = transf.split(':');
 
-            var rect = draw.circle(20);
+            var rect = draw.circle(20);  //acutally a circle
             console.log(split_transf);
             if (split_transf[0] == "iname" ) {
                 rect.fill('#90EE90');
@@ -316,14 +317,14 @@
             } else {
                 rect.fill('#990909');
             }
-            rect.x(i*40);
+            rect.x(i*40);  //set coords
             rect.y(20);
             rect.mousedown(callbackClosure(i, function(i) {
                 removeTransform(i);
-            }));
+            }));  //had to make this closure thing to copy i correctly
             i += 1;
         }
-        footerSize();
+        footerSize(); //resizes bottom region
     }
 
     //https://www.pluralsight.com/guides/javascript-callbacks-variable-scope-problem
@@ -555,6 +556,7 @@
  </script> 
         <script>
         
+	// $() is a shortening of jquery
           $(document).ready(footerSize)
           $(window).resize(footerSize)
                   
